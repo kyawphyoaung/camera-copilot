@@ -1,5 +1,6 @@
 // /prisma/seed.ts
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -8,31 +9,6 @@ async function main() {
 
   // Clean up previous data in the correct order of dependency
   console.log('Cleaning up existing data (if any)...');
-  try {
-    // Delete records from tables with foreign keys first
-    await prisma.account.deleteMany({});
-    await prisma.session.deleteMany({});
-    await prisma.priceEntry.deleteMany({});
-    
-    // Then delete records from the "parent" tables
-    await prisma.user.deleteMany({});
-    await prisma.verificationToken.deleteMany({});
-    await prisma.camera.deleteMany({});
-    await prisma.lens.deleteMany({});
-
-    console.log('Cleanup successful.');
-  } catch (error: any) {
-    // If the error code is P2025, it means a record to delete was not found, which is fine.
-    // In some environments, a race condition after migration can cause a "table does not exist" error.
-    // We can ignore these specific errors during seeding.
-    if (error.code === 'P2025' || error.code === 'P2021') {
-       console.log('Skipping cleanup as tables might not exist yet. This is expected on the first run.');
-    } else {
-      // For any other error, we should fail fast.
-      console.error('An unexpected error occurred during cleanup:', error);
-      throw error;
-    }
-  }
 
   console.log('Seeding new data...');
   
@@ -137,11 +113,11 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
+  .then(async () => {
     await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
   });
-
