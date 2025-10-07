@@ -50,8 +50,10 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  password      String?   // <--- ဒီတစ်ကြောင်းကို ထပ်ထည့်ပါ
   accounts      Account[]
   sessions      Session[]
+  // posts         Post[] // Post feature ကို ဖျက်ထားရင် ဒီတစ်ကြောင်းကိုပါ ဖျက်ပါ
 }
 
 model VerificationToken {
