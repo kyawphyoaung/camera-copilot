@@ -1,18 +1,21 @@
 // /components/PriceChart.tsx
-// Recharts library သည် client-side hooks များအသုံးပြုသောကြောင့် ၎င်းကို Client Component အဖြစ် သီးသန့်ခွဲထုတ်ထားသည်။
-
 'use client';
 
 import { formatToBurmesePrice } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent';
 
-// Custom Tooltip for Chart
-const CustomTooltip = ({ active, payload, label }: any) => {
+// `any` အစား တိကျတဲ့ type ကို သတ်မှတ်ခြင်း
+const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-background border border-border p-2 rounded-md shadow-lg">
         <p className="label">{`Date : ${label}`}</p>
-        <p className="intro" style={{ color: payload[0].color }}>{`Price : ${formatToBurmesePrice(payload[0].value)}`}</p>
+        <p className="intro" style={{ color: payload[0].color }}>
+          {/* payload value က number ဖြစ်ကြောင်း သေချာစေရန် type assertion ထည့်ခြင်း */}
+          {`Price : ${formatToBurmesePrice(payload[0].value as number)}`}
+        </p>
       </div>
     );
   }
