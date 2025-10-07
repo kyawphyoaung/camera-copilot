@@ -3,7 +3,7 @@
 
 'use client';
 
-import { formatToLakhs } from '@/lib/utils';
+import { formatToBurmesePrice } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 // Custom Tooltip for Chart
@@ -12,7 +12,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="bg-background border border-border p-2 rounded-md shadow-lg">
         <p className="label">{`Date : ${label}`}</p>
-        <p className="intro" style={{ color: payload[0].color }}>{`Price : ${formatToLakhs(payload[0].value)}`}</p>
+        <p className="intro" style={{ color: payload[0].color }}>{`Price : ${formatToBurmesePrice(payload[0].value)}`}</p>
       </div>
     );
   }

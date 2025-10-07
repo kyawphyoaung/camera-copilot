@@ -4,7 +4,7 @@
 'use client';
 
 import { useState } from 'react';
-import { formatToLakhs } from '@/lib/utils';
+import { formatToBurmesePrice } from '@/lib/utils';
 
 interface ForecastCalculatorProps {
     referencePriceUSD: number | null | undefined;
@@ -30,7 +30,7 @@ export default function ForecastCalculator({ referencePriceUSD }: ForecastCalcul
             </div>
             <div className="flex justify-between">
                 <span className="text-muted-foreground">ဖြစ်နိုင်ချေရှိသော စျေးနှုန်း:</span>
-                <span className="font-bold text-yellow-400">{formatToLakhs(forecastPrice)}</span>
+                <span className="font-bold text-yellow-400">{formatToBurmesePrice(forecastPrice)}</span>
             </div>
         </div>
     );

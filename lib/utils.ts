@@ -1,6 +1,4 @@
 // /lib/utils.ts
-// Tailwind CSS class တွေကို ပေါင်းစပ်ဖို့နဲ့ ကိန်းဂဏန်းတွေကို မြန်မာ "သိန်း" format ပြောင်းဖို့အတွက် utility functions တွေပါ။
-
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -9,25 +7,55 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * MMK currency ကို "သိန်း" format ပြောင်းပေးတဲ့ function
+ * MMK currency ကို အသေးစိတ်မြန်မာလို ("သိန်း", "သောင်း") format ပြောင်းပေးတဲ့ function
  * @param amount - The amount in MMK
- * @returns Formatted string (e.g., "၃၃ သိန်း", "၃၃.၅ သိန်း")
+ * @returns Formatted string (e.g., "၃၃ သိန်း ၅ သောင်း ၄ ထောင် ၂ ရာ")
  */
-export function formatToLakhs(amount: number): string {
+export function formatToBurmesePrice(amount: number | null | undefined): string {
   if (typeof amount !== 'number' || isNaN(amount)) {
     return "N/A";
   }
   
-  if (amount < 100000) {
-    return new Intl.NumberFormat('my-MM').format(amount) + " ကျပ်";
+  if (amount === 0) {
+    return "၀ ကျပ်";
+  }
+
+  const parts: string[] = [];
+  let remainder = Math.abs(amount);
+
+  const toMyanNarNum = (n: number) => new Intl.NumberFormat('my-MM').format(n);
+
+  const lakhs = Math.floor(remainder / 100000);
+  if (lakhs > 0) {
+    parts.push(`${toMyanNarNum(lakhs)} သိန်း`);
+    remainder %= 100000;
+  }
+
+  const tenThousands = Math.floor(remainder / 10000);
+  if (tenThousands > 0) {
+    parts.push(`${toMyanNarNum(tenThousands)} သောင်း`);
+    remainder %= 10000;
+  }
+
+  const thousands = Math.floor(remainder / 1000);
+  if (thousands > 0) {
+    parts.push(`${toMyanNarNum(thousands)} ထောင်`);
+    remainder %= 1000;
   }
   
-  const lakhs = amount / 100000;
-  // 소수점 한 자리까지 표시
-  const formattedLakhs = Math.round(lakhs * 10) / 10;
+  const hundreds = Math.floor(remainder / 100);
+  if (hundreds > 0) {
+    parts.push(`${toMyanNarNum(hundreds)} ရာ`);
+    remainder %= 100;
+  }
   
-  return `${new Intl.NumberFormat('my-MM').format(formattedLakhs)} သိန်း`;
+  if (remainder > 0 && parts.length === 0) {
+     parts.push(`${toMyanNarNum(remainder)} ကျပ်`);
+  }
+
+  return parts.join(' ');
 }
+
 
 /**
  * Lens ရဲ့ အချက်အလက်တွေပေါ်မူတည်ပြီး suggestion တွေပေးမယ့် function
@@ -63,7 +91,7 @@ export function getLensSuggestions(focalLength: { min: number; max: number }, ap
         suggestions.push({ title: "Good for General Use", description: "နေ့ခင်းဘက်နှင့် အလင်းရောင်ကောင်းစွာရသော အခြေအနေများအတွက် လုံလောက်သည်။ ပေါ့ပါးပြီး သွားလာရလွယ်ကူသော lens များတွင် တွေ့ရတတ်သည်။" });
     }
      if (aperture.min > 4) {
-        suggestions.push({ title: "Daylight Specialist", description: "အလင်းရောင်ကောင်းကောင်း လိုအပ်သည်။ ရှုခင်းများကဲ့သို့ အရာအားလုံးကို ชัดเจนစေလိုသည့်အခါ အသုံးဝင်သည်။" });
+        suggestions.push({ title: "Daylight Specialist", description: "အလင်းရောင်ကောင်းကောင်း လိုအပ်သည်။ ရှုခင်းများကဲ့သို့ အရာအားလုံးကို ကြည်လင်စေလိုသည့်အခါ အသုံးဝင်သည်။" });
     }
 
     return suggestions;

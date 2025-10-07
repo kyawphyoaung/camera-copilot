@@ -4,14 +4,14 @@ import { PlusCircle, Camera as CameraIcon, Aperture } from 'lucide-react';
 import prisma from '@/lib/prisma';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatToLakhs } from '@/lib/utils';
+import { formatToBurmesePrice } from '@/lib/utils';
 
 async function getLatestPrice(itemId: string, type: 'camera' | 'lens') {
     const entry = await prisma.priceEntry.findFirst({
         where: type === 'camera' ? { cameraId: itemId } : { lensId: itemId },
         orderBy: { date: 'desc' }
     });
-    return entry ? formatToLakhs(entry.price) : 'စျေးနှုန်းမရှိသေးပါ';
+    return entry ? formatToBurmesePrice(entry.price) : 'စျေးနှုန်းမရှိသေးပါ';
 }
 
 export default async function HomePage() {
