@@ -1,164 +1,147 @@
+// /prisma/seed.ts
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create 5 users with hashed passwords
-  const users = await Promise.all([
-    prisma.user.create({
-      data: {
-        email: 'alice@example.com',
-        name: 'Alice',
-        password: await bcrypt.hash('password123', 10),
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'bob@example.com',
-        name: 'Bob',
-        password: await bcrypt.hash('password123', 10),
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'charlie@example.com',
-        name: 'Charlie',
-        password: await bcrypt.hash('password123', 10),
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'diana@example.com',
-        name: 'Diana',
-        password: await bcrypt.hash('password123', 10),
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'edward@example.com',
-        name: 'Edward',
-        password: await bcrypt.hash('password123', 10),
-      },
-    }),
-  ]);
+  console.log('Start seeding...');
 
-  const userIdMapping = {
-    alice: users[0].id,
-    bob: users[1].id,
-    charlie: users[2].id,
-    diana: users[3].id,
-    edward: users[4].id,
-  };
+  // Clean up previous data in the correct order of dependency
+  console.log('Cleaning up existing data (if any)...');
+  try {
+    // Delete records from tables with foreign keys first
+    await prisma.account.deleteMany({});
+    await prisma.session.deleteMany({});
+    await prisma.priceEntry.deleteMany({});
+    
+    // Then delete records from the "parent" tables
+    await prisma.user.deleteMany({});
+    await prisma.verificationToken.deleteMany({});
+    await prisma.camera.deleteMany({});
+    await prisma.lens.deleteMany({});
 
-  // Create 15 posts distributed among users
-  await prisma.post.createMany({
+    console.log('Cleanup successful.');
+  } catch (error: any) {
+    // If the error code is P2025, it means a record to delete was not found, which is fine.
+    // In some environments, a race condition after migration can cause a "table does not exist" error.
+    // We can ignore these specific errors during seeding.
+    if (error.code === 'P2025' || error.code === 'P2021') {
+       console.log('Skipping cleanup as tables might not exist yet. This is expected on the first run.');
+    } else {
+      // For any other error, we should fail fast.
+      console.error('An unexpected error occurred during cleanup:', error);
+      throw error;
+    }
+  }
+
+  console.log('Seeding new data...');
+  
+  // Create Cameras
+  const sonyA6400 = await prisma.camera.create({
+    data: {
+      brand: 'Sony',
+      model: 'a6400',
+      imageUrl: 'https://images.unsplash.com/photo-1599599922538-9b6b73a4b6c7?q=80&w=1974&auto=format&fit=crop',
+      referencePriceUSD: 899,
+    },
+  });
+
+  const sonyZVE10 = await prisma.camera.create({
+    data: {
+      brand: 'Sony',
+      model: 'ZV-E10',
+      imageUrl: 'https://images.unsplash.com/photo-1627993076899-2de6d7e4c2a3?q=80&w=2070&auto=format&fit=crop',
+      referencePriceUSD: 699,
+    },
+  });
+
+  // Create Lenses
+  const sigma1850 = await prisma.lens.create({
+    data: {
+      brand: 'Sigma',
+      name: '18-50mm F2.8 DC DN',
+      focalLengthMin: 18,
+      focalLengthMax: 50,
+      apertureMin: 2.8,
+      apertureMax: 22,
+      mountType: 'E',
+      lensType: 'DC DN',
+      imageUrl: 'https://images.unsplash.com/photo-1594993417618-433e5077d7a9?q=80&w=1964&auto=format&fit=crop'
+    },
+  });
+
+  // Create Price Entries for Sony a6400
+  await prisma.priceEntry.createMany({
     data: [
-      // Alice's posts
-      { 
-        title: 'Getting Started with TypeScript and Prisma', 
-        content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce id erat a lorem tincidunt ultricies. Vivamus porta bibendum nulla vel accumsan.', 
-        published: true, 
-        authorId: userIdMapping.alice 
+      {
+        cameraId: sonyA6400.id,
+        price: 3300000,
+        shopName: 'Camera Shop A',
+        date: new Date('2025-09-01'),
       },
-      { 
-        title: 'How ORMs Simplify Complex Queries', 
-        content: 'Duis sagittis urna ut sapien tristique convallis. Aenean vel ligula felis. Phasellus bibendum sem at elit dictum volutpat.', 
-        published: false, 
-        authorId: userIdMapping.alice 
+      {
+        cameraId: sonyA6400.id,
+        price: 3250000,
+        shopName: 'Camera Shop B',
+        date: new Date('2025-09-15'),
+        isSecondHand: true,
+        shutterCount: 5500,
+        condition: 95
       },
-
-      // Bob's posts
-      { 
-        title: 'Mastering Prisma: Efficient Database Migrations', 
-        content: 'Ut ullamcorper nec erat id auctor. Nullam nec ligula in ex feugiat tincidunt. Cras accumsan vehicula tortor ut eleifend.', 
-        published: true, 
-        authorId: userIdMapping.bob 
-      },
-      { 
-        title: 'Best Practices for Type Safety in ORMs', 
-        content: 'Aliquam erat volutpat. Suspendisse potenti. Maecenas fringilla elit vel eros laoreet, et tempor sapien vulputate.', 
-        published: true, 
-        authorId: userIdMapping.bob 
-      },
-      { 
-        title: 'TypeScript Utility Types for Database Models', 
-        content: 'Donec ac magna facilisis, vestibulum ligula at, elementum nisl. Morbi volutpat eget velit eu egestas.', 
-        published: false, 
-        authorId: userIdMapping.bob 
-      },
-
-      // Charlie's posts (no posts for Charlie)
-
-      // Diana's posts
-      { 
-        title: 'Exploring Database Indexes and Their Performance Impact', 
-        content: 'Vivamus ac velit tincidunt, sollicitudin erat quis, fringilla enim. Aenean posuere est a risus placerat suscipit.', 
-        published: true, 
-        authorId: userIdMapping.diana 
-      },
-      { 
-        title: 'Choosing the Right Database for Your TypeScript Project', 
-        content: 'Sed vel suscipit lorem. Duis et arcu consequat, sagittis justo quis, pellentesque risus. Curabitur sed consequat est.', 
-        published: false, 
-        authorId: userIdMapping.diana 
-      },
-      { 
-        title: 'Designing Scalable Schemas with Prisma', 
-        content: 'Phasellus ut erat nec elit ultricies egestas. Vestibulum rhoncus urna eget magna varius pharetra.', 
-        published: true, 
-        authorId: userIdMapping.diana 
-      },
-      { 
-        title: 'Handling Relations Between Models in ORMs', 
-        content: 'Integer luctus ac augue at tristique. Curabitur varius nisl vitae mi fringilla, vel tincidunt nunc dictum.', 
-        published: false, 
-        authorId: userIdMapping.diana 
-      },
-
-      // Edward's posts
-      { 
-        title: 'Why TypeORM Still Has Its Place in 2025', 
-        content: 'Morbi non arcu nec velit cursus feugiat sit amet sit amet mi. Etiam porttitor ligula id sem molestie, in tempor arcu bibendum.', 
-        published: true, 
-        authorId: userIdMapping.edward 
-      },
-      { 
-        title: 'NoSQL vs SQL: The Definitive Guide for Developers', 
-        content: 'Suspendisse a ligula sit amet risus ullamcorper tincidunt. Curabitur tincidunt, sapien id fringilla auctor, risus libero gravida odio, nec volutpat libero orci nec lorem.', 
-        published: true, 
-        authorId: userIdMapping.edward 
-      },
-      { 
-        title: 'Optimizing Queries with Prisma\'s Select and Include', 
-        content: 'Proin vel diam vel nisi facilisis malesuada. Sed vitae diam nec magna mollis commodo a vitae nunc.', 
-        published: false, 
-        authorId: userIdMapping.edward 
-      },
-      { 
-        title: 'PostgreSQL Optimizations Every Developer Should Know', 
-        content: 'Nullam mollis quam sit amet lacus interdum, at suscipit libero pellentesque. Suspendisse in mi vitae magna finibus pretium.', 
-        published: true, 
-        authorId: userIdMapping.edward 
-      },
-      { 
-        title: 'Scaling Applications with Partitioned Tables in PostgreSQL', 
-        content: 'Cras vitae tortor in mauris tristique elementum non id ipsum. Nunc vitae pulvinar purus.', 
-        published: true, 
-        authorId: userIdMapping.edward 
+      {
+        cameraId: sonyA6400.id,
+        price: 3400000,
+        shopName: 'Camera Shop A',
+        date: new Date('2025-10-05'),
       },
     ],
   });
 
-  console.log('Seeding completed.');
+  // Create Price Entries for Sony ZV-E10
+  await prisma.priceEntry.createMany({
+    data: [
+      {
+        cameraId: sonyZVE10.id,
+        price: 2800000,
+        shopName: 'Online Store C',
+        date: new Date('2025-09-10'),
+      },
+      {
+        cameraId: sonyZVE10.id,
+        price: 2850000,
+        shopName: 'Camera Shop B',
+        date: new Date('2025-10-02'),
+      },
+    ],
+  });
+
+  // Create Price Entries for Sigma 18-50mm
+  await prisma.priceEntry.createMany({
+    data: [
+      {
+        lensId: sigma1850.id,
+        price: 1500000,
+        shopName: 'Lens World',
+        date: new Date('2025-09-20'),
+      },
+      {
+        lensId: sigma1850.id,
+        price: 1550000,
+        shopName: 'Camera Shop A',
+        date: new Date('2025-10-06'),
+      },
+    ],
+  });
+
+  console.log('Seeding finished.');
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
+  .catch((e) => {
     console.error(e);
-    await prisma.$disconnect();
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
+

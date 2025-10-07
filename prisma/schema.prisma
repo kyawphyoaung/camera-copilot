@@ -13,22 +13,101 @@ datasource db {
   url       = env("PRISMA_DATABASE_URL") 
   directUrl = env("DATABASE_URL")
 }
+// /prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// NextAuth.js Models (from Vercel Template)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
-model User {
-  id       String  @id @default(cuid())
-  name     String?
-  email    String  @unique
-  password String
-  posts    Post[]
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String?
-  author    User?    @relation(fields: [authorId], references: [id])
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+
+// Our Application Models
+model Camera {
+  id                String       @id @default(cuid())
+  brand             String
+  model             String
+  imageUrl          String?
+  referencePriceUSD Float?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  priceEntries      PriceEntry[]
+
+  @@unique([brand, model])
+}
+
+model Lens {
+  id              String       @id @default(cuid())
+  brand           String
+  name            String
+  imageUrl        String?
+  focalLengthMin  Int
+  focalLengthMax  Int
+  apertureMin     Float
+  apertureMax     Float
+  mountType       String // E.g., "E", "FE"
+  lensType        String // E.g., "DN", "DG"
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  priceEntries    PriceEntry[]
+}
+
+model PriceEntry {
+  id            String   @id @default(cuid())
+  price         Float
+  shopName      String
+  date          DateTime
+  isSecondHand  Boolean  @default(false)
+  shutterCount  Int?
+  condition     Int? // 0-100 percentage
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  cameraId String?
+  camera   Camera? @relation(fields: [cameraId], references: [id])
+
+  lensId String?
+  lens   Lens?   @relation(fields: [lensId], references: [id])
 }
